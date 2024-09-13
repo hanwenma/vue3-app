@@ -45,7 +45,8 @@ onMounted(() => {
 
 const { actualRenderData } = useVirtualList({
   data: tableData, // 列表项数据
-  itemHeight: 51,
+  itemKey: 'id',// 标识数据唯一性
+  itemHeight: 50,
   size: 10,
   scrollContainer: ".el-scrollbar__wrap", // 滚动容器
   actualHeightContainer: ".el-scrollbar__view", // 渲染实际高度的容器
@@ -58,15 +59,11 @@ const dialogVisible = ref(false);
 const handleClose = (done: () => void) => {
   done();
 };
-let rowData = {};
-const clickAct = (row) => {
+let rowData:any = {};
+const clickAct = (row:any) => {
   dialogVisible.value = true;
   rowData = row;
 };
-
-const rowClassName = (r) => {
-  return `row-${r.rowIndex}`
-}
 </script>
 
 <template>

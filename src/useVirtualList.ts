@@ -11,64 +11,106 @@ import type { Ref } from "vue";
 
 interface Config {
   data: Ref<any[]>; // 数据
-  itemHeight: number;// 列表项高度
-  size: number;// 每次渲染数据量
-  scrollContainer: string;// 滚动容器的元素选择器
-  actualHeightContainer: string;// 用于撑开高度的元素选择器
-  tranlateContainer: string;// 用于偏移的元素选择器
+  itemHeight: number; // 列表项高度
+  size: number; // 每次渲染数据量
+  scrollContainer: string; // 滚动容器的元素选择器
+  actualHeightContainer: string; // 用于撑开高度的元素选择器
+  tranlateContainer: string; // 用于偏移的元素选择器
   itmeContainer: string;
+  itemKey: string;
 }
 
 type HtmlElType = HTMLElement | null;
 
 export default function useVirtualList(config: Config) {
   // 获取元素
-  let actualHeightContainerEl: HtmlElType  = null,
-  tranlateContainerEl: HtmlElType = null,
-  scrollContainerEl: HtmlElType = null;
+  let actualHeightContainerEl: HtmlElType = null,
+    tranlateContainerEl: HtmlElType = null,
+    scrollContainerEl: HtmlElType = null;
 
   onMounted(() => {
-    actualHeightContainerEl = document.querySelector(config.actualHeightContainer);
+    actualHeightContainerEl = document.querySelector(
+      config.actualHeightContainer
+    );
     scrollContainerEl = document.querySelector(config.scrollContainer);
     tranlateContainerEl = document.querySelector(config.tranlateContainer);
   });
 
-  // 通过设置高度，模拟滚动
-  watch(() => config.data.value, (newVal) => {
-    actualHeightContainerEl!.style.height = newVal.length * config.itemHeight + "px";
-  });
+  // 数据源发生变动
+  watch(
+    () => config.data.value,
+    () => {
+      // 通过设置高度，模拟滚动
+      updateActualHeight();
+
+      // 计算需要渲染的数据
+      updateRenderData(0);
+    }
+  );
+
+  // 更新实际高度
+  const updateActualHeight = () => {
+    let actualHeight = 0;
+    config.data.value.forEach((_, i) => {
+      actualHeight += RenderedItemsCachMap[i] || config.itemHeight;
+    });
+
+    actualHeightContainerEl!.style.height = actualHeight + "px";
+  };
+
+  // 缓存已渲染元素的高度
+  const RenderedItemsCachMap: any = {};
+  const updateRenderedItemCach = (index: number) => {
+    nextTick(() => {
+      // 获取所有列表项元素
+      const Items: HTMLElement[] = Array.from(
+        document.querySelectorAll(config.itmeContainer)
+      );
+
+      // 进行缓存
+      Items.forEach((el) => {
+        if (!RenderedItemsCachMap[index]) {
+          RenderedItemsCachMap[index] = el.offsetHeight;
+        }
+        index++;
+      });
+
+      updateActualHeight();
+    });
+  };
 
   // 实际渲染的数据
-  const RenderedItemsHeightMap:any = {};
-  const startIndex = ref(0);
-  const endIndex = ref(config.size - 1);
-  const actualRenderData = computed(() => {
-    nextTick(() => {
-      const Items: HTMLElement[] = Array.from(document.querySelectorAll(config.itmeContainer));
-      Items.forEach((el) => {
-        const key = el.innerText;
-        if(!RenderedItemsHeightMap[key]) {
-          RenderedItemsHeightMap[key] = el.clientHeight;
-        };
-      });
-      console.log(RenderedItemsHeightMap);
+  const actualRenderData: Ref<any[]> = ref([]);
 
-      // actualHeightContainerEl!.style.height = 
-    });
-    return config.data.value.slice(startIndex.value, endIndex.value + 1);
-  });
+  const updateRenderData = (scrollTop: number) => {
+    let startIndex = 0;
+    let offsetHeight = 0;
+    let dataSource = config.data.value;
 
-  // 滚动事件
-  const handleScroll = (e) => {
-    const target = e.target;
-    const { scrollTop, clientHeight, scrollHeight } = target;
+    for (let i = 0; i < dataSource.length; i++) {
+      offsetHeight += RenderedItemsCachMap[startIndex] || config.itemHeight;
+      if (offsetHeight >= scrollTop) {
+        startIndex = i;
+        break;
+      }
+    }
+    
+
+    actualRenderData.value = dataSource.slice(
+      startIndex,
+      startIndex + config.size
+    );
 
     // 保证数据渲染一直在可视区
-    tranlateContainerEl!.style.transform = `translateY(${scrollTop}px)`;
+    nextTick(() => tranlateContainerEl!.style.transform = `translateY(${offsetHeight}px)`);
 
+    updateRenderedItemCach(startIndex);
+  };
+
+  // 滚动事件
+  const handleScroll = (e: any) => {
     // 渲染正确的数据
-    startIndex.value = Math.floor(scrollTop / config.itemHeight);
-    endIndex.value = startIndex.value + config.size;
+    updateRenderData(e.target.scrollTop);
   };
 
   // 注册滚动事件

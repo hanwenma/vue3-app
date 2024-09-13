@@ -10,13 +10,7 @@ declare module 'vue' {
     CountDown: typeof import('./src/components/CountDown.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElDialog: typeof import('element-plus/es')['ElDialog']
-    ElTable: typeof import('element-plus/es')['ElTable']
-    ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     MyTransition: typeof import('./src/components/MyTransition.vue')['default']
-    TBotton: typeof import('tdesign-mobile-vue')['Botton']
-    TButton: typeof import('tdesign-mobile-vue')['Button']
-    TCollapse: typeof import('tdesign-mobile-vue')['Collapse']
-    TCollapsePanel: typeof import('tdesign-mobile-vue')['CollapsePanel']
   }
 }
