@@ -4,7 +4,6 @@ import {
   onBeforeUnmount,
   watch,
   computed,
-  nextTick,
 } from "vue";
 
 import type { Ref } from "vue";
@@ -16,7 +15,6 @@ interface Config {
   scrollContainer: string;// 滚动容器的元素选择器
   actualHeightContainer: string;// 用于撑开高度的元素选择器
   tranlateContainer: string;// 用于偏移的元素选择器
-  itmeContainer: string;
 }
 
 type HtmlElType = HTMLElement | null;
@@ -39,22 +37,9 @@ export default function useVirtualList(config: Config) {
   });
 
   // 实际渲染的数据
-  const RenderedItemsHeightMap:any = {};
   const startIndex = ref(0);
   const endIndex = ref(config.size - 1);
   const actualRenderData = computed(() => {
-    nextTick(() => {
-      const Items: HTMLElement[] = Array.from(document.querySelectorAll(config.itmeContainer));
-      Items.forEach((el) => {
-        const key = el.innerText;
-        if(!RenderedItemsHeightMap[key]) {
-          RenderedItemsHeightMap[key] = el.clientHeight;
-        };
-      });
-      console.log(RenderedItemsHeightMap);
-
-      // actualHeightContainerEl!.style.height = 
-    });
     return config.data.value.slice(startIndex.value, endIndex.value + 1);
   });
 
@@ -62,6 +47,14 @@ export default function useVirtualList(config: Config) {
   const handleScroll = (e) => {
     const target = e.target;
     const { scrollTop, clientHeight, scrollHeight } = target;
+
+    // 边界控制：实际触底，且页面正常渲染全部数据时，不再触发后续计算，防止触底抖动
+    if (
+      scrollHeight <= scrollTop + clientHeight &&
+      endIndex.value >= config.data.value.length
+    ) {
+      return;
+    }
 
     // 保证数据渲染一直在可视区
     tranlateContainerEl!.style.transform = `translateY(${scrollTop}px)`;
