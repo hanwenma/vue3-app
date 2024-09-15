@@ -29,29 +29,50 @@ const loadData = () => {
 
 onMounted(() => {
   setTimeout(() => {
-    const max = 20;
+    const max = 10 * 2;
     let i = 1;
     while (remoteData.length < max) {
       remoteData.push({
         id: i,
         date: "2016-05-03_" + i,
         name: "Tom_" + i,
-        address: "No. 189, Grove St, Los Angeles _ " + i,
+        value: "Tom_" + i,
+        label: "Tom_" + i,
+        address: "No. 189, Grove St, Los Angeles _ ".repeat(Math.random() * 10),
       });
       i++;
     }
   }, 500);
 });
 
+// const { actualRenderData } = useVirtualList({
+//   data: tableData, // 列表项数据
+//   itemHeight: 50,
+//   size: 10,
+//   scrollContainer: ".el-scrollbar__wrap", // 滚动容器
+//   actualHeightContainer: ".el-scrollbar__view", // 渲染实际高度的容器
+//   translateContainer: ".el-table__body", // 需要偏移的目标元素,
+//   itmeContainer: '.el-table__row'
+// });
+
+// const { actualRenderData } = useVirtualList({
+//   data: tableData, // 列表项数据
+//   itemHeight: 51,
+//   size: 10,
+//   scrollContainer: ".scroll-container", // 滚动容器
+//   actualHeightContainer: ".actual-height-container", // 渲染实际高度的容器
+//   translateContainer: ".translate-container", // 需要偏移的目标元素,
+//   itmeContainer: '.item'
+// });
+
 const { actualRenderData } = useVirtualList({
   data: tableData, // 列表项数据
-  itemKey: 'id',// 标识数据唯一性
-  itemHeight: 50,
+  itemHeight: 51,
   size: 10,
-  scrollContainer: ".el-scrollbar__wrap", // 滚动容器
-  actualHeightContainer: ".el-scrollbar__view", // 渲染实际高度的容器
-  tranlateContainer: ".el-table__body", // 需要偏移的目标元素,
-  itmeContainer: '.item'
+  scrollContainer: ".el-scrollbar", // 滚动容器
+  actualHeightContainer: ".el-select-dropdown__wrap", // 渲染实际高度的容器
+  translateContainer: ".el-scrollbar__view", // 需要偏移的目标元素,
+  itmeContainer: '.el-select-dropdown__item'
 });
 
 const dialogVisible = ref(false);
@@ -64,6 +85,7 @@ const clickAct = (row:any) => {
   dialogVisible.value = true;
   rowData = row;
 };
+const value = ref();
 </script>
 
 <template>
@@ -75,23 +97,34 @@ const clickAct = (row:any) => {
 
   <h2>Total: {{ tableData.length }}</h2>
 
-  <ul
-    class="el-scrollbar__wrap"
+  <el-select v-model="value" class="m-2" placeholder="Select" size="large">
+    <el-option
+      v-for="item in actualRenderData"
+      :key="item.value"
+      :label="item.label"
+      :value="item.value"
+    />
+  </el-select>
+
+  <!-- <ul
+    class="scroll-container"
     style="height: 500px; overflow-y: auto; border: 1px solid"
   >
-    <div class="el-scrollbar__view">
-      <div class="el-table__body">
+    <div class="actual-height-container">
+      <div class="translate-container">
         <li
           class="item"
           :key="item.name"
           v-for="(item, i) in actualRenderData"
-          :style="`height: ${i == 0 ? 30 : i * 30}px; text-align: center; border-bottom: 1px solid red`"
+          style="text-align: center; border-bottom: 1px solid red"
+          @click="clickAct(item)"
         >
-          {{ item.name }}
+          <p>{{ item.name }}</p>
+          <p>{{item.address}}</p>
         </li>
       </div>
     </div>
-  </ul>
+  </ul> -->
 
   <!-- <el-table
     :data="actualRenderData"
@@ -126,4 +159,13 @@ const clickAct = (row:any) => {
 </template>
 
 <style>
+.el-scrollbar{
+  max-height: 200px;
+  overflow-y: auto;
+  
+}
+.el-scrollbar__view{
+  height: 100%;
+  max-height: none !important;
+}
 </style>

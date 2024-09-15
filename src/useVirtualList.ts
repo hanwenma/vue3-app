@@ -1,12 +1,4 @@
-import {
-  ref,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  computed,
-  nextTick,
-} from "vue";
-
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
 import type { Ref } from "vue";
 
 interface Config {
@@ -15,9 +7,8 @@ interface Config {
   size: number; // 每次渲染数据量
   scrollContainer: string; // 滚动容器的元素选择器
   actualHeightContainer: string; // 用于撑开高度的元素选择器
-  tranlateContainer: string; // 用于偏移的元素选择器
+  translateContainer: string; // 用于偏移的元素选择器
   itmeContainer: string;
-  itemKey: string;
 }
 
 type HtmlElType = HTMLElement | null;
@@ -25,7 +16,7 @@ type HtmlElType = HTMLElement | null;
 export default function useVirtualList(config: Config) {
   // 获取元素
   let actualHeightContainerEl: HtmlElType = null,
-    tranlateContainerEl: HtmlElType = null,
+    translateContainerEl: HtmlElType = null,
     scrollContainerEl: HtmlElType = null;
 
   onMounted(() => {
@@ -33,15 +24,18 @@ export default function useVirtualList(config: Config) {
       config.actualHeightContainer
     );
     scrollContainerEl = document.querySelector(config.scrollContainer);
-    tranlateContainerEl = document.querySelector(config.tranlateContainer);
+    translateContainerEl = document.querySelector(config.translateContainer);
   });
+
+  // 数据源，便于后续直接访问
+  let dataSource: any[] = [];
 
   // 数据源发生变动
   watch(
     () => config.data.value,
-    () => {
-      // 通过设置高度，模拟滚动
-      updateActualHeight();
+    (newVla) => {
+      // 更新数据源
+      dataSource = newVla;
 
       // 计算需要渲染的数据
       updateRenderData(0);
@@ -51,16 +45,23 @@ export default function useVirtualList(config: Config) {
   // 更新实际高度
   const updateActualHeight = () => {
     let actualHeight = 0;
-    config.data.value.forEach((_, i) => {
-      actualHeight += RenderedItemsCachMap[i] || config.itemHeight;
+    dataSource.forEach((_, i) => {
+      actualHeight += getItemHeightFromCache(i);
     });
 
     actualHeightContainerEl!.style.height = actualHeight + "px";
   };
 
   // 缓存已渲染元素的高度
-  const RenderedItemsCachMap: any = {};
-  const updateRenderedItemCach = (index: number) => {
+  const RenderedItemsCache: any = {};
+
+  // 更新已渲染列表项的缓存高度
+  const updateRenderedItemCache = (index: number) => {
+    // 当所有元素的实际高度更新完毕，就不需要重新计算高度
+    const shouldUpdate =
+      Object.keys(RenderedItemsCache).length < dataSource.length;
+    if (!shouldUpdate) return;
+
     nextTick(() => {
       // 获取所有列表项元素
       const Items: HTMLElement[] = Array.from(
@@ -69,42 +70,56 @@ export default function useVirtualList(config: Config) {
 
       // 进行缓存
       Items.forEach((el) => {
-        if (!RenderedItemsCachMap[index]) {
-          RenderedItemsCachMap[index] = el.offsetHeight;
+        if (!RenderedItemsCache[index]) {
+          RenderedItemsCache[index] = el.offsetHeight;
         }
         index++;
       });
 
+      // 更新实际高度
       updateActualHeight();
     });
+  };
+
+  // 获取缓存高度，无缓存，取配置项的 itemHeight
+  const getItemHeightFromCache = (index: number | string) => {
+    const val = RenderedItemsCache[index];
+    return val === void 0 ? config.itemHeight : val;
   };
 
   // 实际渲染的数据
   const actualRenderData: Ref<any[]> = ref([]);
 
+  // 更新实际渲染数据
   const updateRenderData = (scrollTop: number) => {
     let startIndex = 0;
     let offsetHeight = 0;
-    let dataSource = config.data.value;
 
     for (let i = 0; i < dataSource.length; i++) {
-      offsetHeight += RenderedItemsCachMap[startIndex] || config.itemHeight;
+      offsetHeight += getItemHeightFromCache(i);
+
       if (offsetHeight >= scrollTop) {
         startIndex = i;
         break;
       }
     }
-    
 
+    // 计算得出的渲染数据
     actualRenderData.value = dataSource.slice(
       startIndex,
       startIndex + config.size
     );
 
-    // 保证数据渲染一直在可视区
-    nextTick(() => tranlateContainerEl!.style.transform = `translateY(${offsetHeight}px)`);
+    // 缓存最新的列表项高度
+    updateRenderedItemCache(startIndex);
 
-    updateRenderedItemCach(startIndex);
+    // 更新偏移值
+    updateOffset(offsetHeight - getItemHeightFromCache(startIndex));
+  };
+
+  // 更新偏移值
+  const updateOffset = (offset: number) => {
+    translateContainerEl!.style.transform = `translateY(${offset}px)`;
   };
 
   // 滚动事件
