@@ -1,7 +1,10 @@
 import { createApp } from "vue";
 // import 'amfe-flexible'
+import { Watermark } from 'vant';
 import App from "./App.vue";
 
-createApp(App).mount("#app");
+const app = createApp(App)
+app.use(Watermark);
+app.mount("#app");
 
 
