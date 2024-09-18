@@ -19,7 +19,6 @@ const mutatKeys = useMutatWatermark(['.van-watermark']);
 </script>
 
 <template>
-<h1>{{ keys }}</h1>
   <van-watermark :width="150" opacity="1" :key="mutatKeys[0]">
     <template #content>
       <div

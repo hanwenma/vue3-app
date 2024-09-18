@@ -7,14 +7,8 @@ export default function useMutatWatermark(seletors: string[]) {
   // 挂载时，开启监听
   onMounted(() => {
     seletors.map((seletor, index) => {
-      const target: HTMLElement | null = document.querySelector(seletor);
-
-      if (!target) return;
-
-      const parent = target?.parentElement!;
-
       // 监听父元素
-      observer(parent, index);
+      observer(seletor, index);
 
       // 初始化 key
       keys.push(performance.now());
@@ -22,23 +16,42 @@ export default function useMutatWatermark(seletors: string[]) {
   });
 
   // 开启监听
-  const observer = (target: HTMLElement, index: number) => {
+  const observer = (seletor: string, index: number) => {
+    const target: HTMLElement | null = document.querySelector(seletor);
+    if (!target) return;
+    const parent = target?.parentNode!;
+
     // 实例化
     const mutationObserver = new MutationObserver(function (mutationList) {
       // 先关闭监听，避免死循环
       mutationObserver.disconnect();
 
+      for (const mutation of mutationList) {
+        if (
+          mutation.type == "childList" && 
+          mutation.removedNodes[0]
+        ) {
+          const nodeEl = mutation.removedNodes[0] as HTMLElement;
+          const seletorStr = seletor.slice(1);
+          const isTargetEl = nodeEl.classList.contains(seletorStr) || nodeEl.id === seletorStr;
+
+          if(isTargetEl){
+            window.location.reload();
+            return;
+          }
+        }
+      }
+
       // 修改 key 值，目的是让外部组件重新渲染
       keys[index] = performance.now();
 
       // 修改完成后，重新开启监听
-      setTimeout(() => observer(target, index));
-
+      nextTick(() => observer(seletor, index));
     });
 
     // 开启监听
-    nextTick(() => {
-      mutationObserver.observe(target, {
+    setTimeout(() => {
+      mutationObserver.observe(parent, {
         subtree: true, // 应用于整颗 子树
         childList: true, // 子节点的增、删变换
         attributes: true, // 检测属性变化
