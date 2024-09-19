@@ -8,12 +8,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     CountDown: typeof import('./src/components/CountDown.vue')['default']
-    ElButton: typeof import('element-plus/es')['ElButton']
-    ElDialog: typeof import('element-plus/es')['ElDialog']
-    ElOption: typeof import('element-plus/es')['ElOption']
-    ElSelect: typeof import('element-plus/es')['ElSelect']
-    ElTable: typeof import('element-plus/es')['ElTable']
-    ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     MyTransition: typeof import('./src/components/MyTransition.vue')['default']
   }

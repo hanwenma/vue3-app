@@ -6,12 +6,13 @@ export default function useMutatWatermark(seletors: string[]) {
 
   // 挂载时，开启监听
   onMounted(() => {
-    seletors.map((seletor, index) => {
-      // 监听父元素
-      observer(seletor, index);
-
+    // 遍历监听传入的多个元素
+    seletors.forEach((seletor, index) => {
       // 初始化 key
       keys.push(performance.now());
+
+      // 监听元素
+      observer(seletor, index);
     });
   });
 
@@ -19,6 +20,8 @@ export default function useMutatWatermark(seletors: string[]) {
   const observer = (seletor: string, index: number) => {
     const target: HTMLElement | null = document.querySelector(seletor);
     if (!target) return;
+
+    // 获取目标元素父元素作为监听目标，目的是到希望外部传入的元素被删除能够被监听到
     const parent = target?.parentNode!;
 
     // 实例化
@@ -27,6 +30,7 @@ export default function useMutatWatermark(seletors: string[]) {
       mutationObserver.disconnect();
 
       for (const mutation of mutationList) {
+        // 如果命中此处，意味着外部传入的目标元素被删除，此时直接刷新页面
         if (
           mutation.type == "childList" && 
           mutation.removedNodes[0]
