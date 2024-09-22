@@ -25,10 +25,10 @@ export default defineConfig({
   css: {
     postcss: {
       plugins: [
-        pxtovw({
-          viewportWidth: 750, // 计稿宽度 750
-          viewportUnit: "vw",
-        }),
+        // pxtovw({
+        //   viewportWidth: 750, // 计稿宽度 750
+        //   viewportUnit: "vw",
+        // }),
         // postCssPxToRem({
         //   rootValue: 75, // 750 设计稿，分成 10 份
         //   propList: ['*'], // 需要转换的属性，这里选择全部都进行转换

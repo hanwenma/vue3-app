@@ -60,7 +60,6 @@ export default function useMutatWatermark(seletors: string[]) {
         childList: true, // 子节点的增、删变换
         attributes: true, // 检测属性变化
         attributeFilter: ["style"], // style 相关属性变化
-        attributeOldValue: true, // 记录变化之前的属性值
       });
     });
 
