@@ -14,77 +14,65 @@ import { debounce } from "lodash";
 import useVirtualList from "./useVirtualList";
 import useMutatWatermark from "./useMutatWatermark";
 
-const data = ref([
-  {
-    id: '1',
-    title: '标题 1',
-    content: ['内容 1'.repeat(100),],
-    active: true
-  },
-  {
-    id: '2',
-    title: '标题 2',
-    content: ['内容 2'.repeat(150),],
-    active: false
-  },
-  {
-    id: '3',
-    title: '标题 3',
-    content: ['内容 3'.repeat(120), '内容 3'.repeat(100)],
-    active: false
-  },
-]);
+// 开启监听
+const startObserve = (selector: string) => {
+  const contents: HTMLElement[] = Array.from(
+    document.querySelectorAll(selector)!
+  );
 
-const offsetTop = ref(0);
-
-onMounted(() => {
-  const root = document.querySelector('.content-box')!;
-  const contents = document.querySelectorAll('.content-item')!;
-
-  const intersectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+  // 实例化 IntersectionObserver
+  let intersectionObserverInstance = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
       const { target, isIntersecting } = entry;
+      // 目标元素进入视口
       if (isIntersecting) {
-        const id = target.dataset.id;
-        clickAct({ target: document.querySelector(`.title-item-${id}`) }, id);
+        // 执行入场动画
+        startAnimate(target);
       }
     });
-  }, {
-    root,
-    threshold: [0.5]
   });
-  // 开始监听
-  contents.forEach((target => {
-    intersectionObserver.observe(target);
-  }));
+
+  // 开始监听每一个内容项
+  contents.forEach((target) => {
+    intersectionObserverInstance.observe(target);
+  });
+
+  return intersectionObserverInstance;
+};
+
+// 开始动画
+const startAnimate = (target: Element) => {
+  const newspaperSpinning = [
+    {
+      transform: `translate(100px, 50px) scale(0.5)`,
+      opacity: 0,
+      background: "linear-gradient(225deg, #CC4D82, #FDCA8A)",
+      color: "red",
+    },
+    { transform: "translate(0px, 0px) scale(1)" },
+  ];
+
+  const newspaperTiming = {
+    duration: 300,// 动画执行时间
+    iterations: 1,// 动画执行次数
+  };
+
+  target.animate(newspaperSpinning, newspaperTiming);
+};
+
+let intersectionObserver: IntersectionObserver;
+onMounted(() => {
+  intersectionObserver = startObserve(".item");
 });
 
-const clickAct = (e, id: string) => {
-  data.value.forEach(v => {
-    if (id === v.id) {
-      v.active = true;
-      offsetTop.value = e.target.offsetTop;
-    } else {
-      v.active = false;
-    }
-  });
-}
-
+onBeforeUnmount(() => {
+  intersectionObserver.disconnect();
+});
 </script>
 
 <template>
-  <div class="title-box">
-    <div class="active-line" :style="{ top: offsetTop + 'px' }"></div>
-    <a :class="['title-item', `title-item-${item.id}`, item.active ? 'active' : '']" :href="`#${item.id}`"
-      @click="clickAct($event, item.id)" v-for="(item, i) in data">{{ item.title }}</a>
-  </div>
-  <div class="content-box">
-    <div class="content-item" v-for="item in data" :data-id="item.id">
-      <h3 :id="item.id">{{ item.title }}</h3>
-      <div class="text" v-for="text in item.content">
-        {{ text }}
-      </div>
-    </div>
+  <div class="list">
+    <div class="item" v-for="i in 100" :data-index="i">{{ i }}</div>
   </div>
 </template>
 
@@ -92,63 +80,18 @@ const clickAct = (e, id: string) => {
 @import url("./style.css");
 </style>
 <style>
-#app {
-  display: flex;
+.list {
+  overflow: hidden;
 }
-
-.active {
-  color: #3939db !important;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.active-line {
-  width: 3px;
-  height: 22px;
-  border-radius: 3px;
-  background: #3939db;
-  display: block;
-  position: absolute;
-  left: 5px;
-  top: 3px;
-  transition: 0.3s;
-}
-
-.title-box {
-  position: relative;
-  padding: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: column;
-  border-right: 1px solid rgb(248, 149, 0);
-}
-
-.title-item {
-  text-decoration: none;
-  color: #333;
-  margin-left: 10px;
-  margin-top: 10px;
-  margin-bottom: 20px;
-}
-
-.content-box {
-  box-sizing: border-box;
-  flex: 1;
-  height: 100vh;
-  overflow-y: auto;
-  padding-left: 10px;
-}
-
-.content-item {}
-
-h3 {
-  height: 60px;
-  line-height: 60px;
-}
-
-.text {
-  font-size: 14px;
-  line-height: 25px;
-  margin-bottom: 20px;
+.item {
+  height: 200px;
+  line-height: 200px;
+  text-align: center;
+  margin: 20px;
+  font-size: 50px;
+  font-weight: 700;
+  background: linear-gradient(225deg, #7dccb3, #ac44cc);
+  color: #fff;
+  border-radius: 10px;
 }
 </style>
